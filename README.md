@@ -46,11 +46,21 @@ Users connect from the dashboard through a Telegram deep link.
 
 ## Cron endpoints
 
-Call these with `Authorization: Bearer $CRON_SECRET`:
+Call these with `Authorization: Bearer $CRON_SECRET`, or use `?secret=$CRON_SECRET` when configuring cron from a web UI:
 
 ```text
 POST /api/cron/poll
 POST /api/cron/dispatch
+```
+
+For Vercel web cron, configure:
+
+```text
+/api/cron/poll?secret=YOUR_CRON_SECRET
+0 */2 * * *
+
+/api/cron/dispatch?secret=YOUR_CRON_SECRET
+*/15 * * * *
 ```
 
 The poller updates global job postings. The dispatcher checks each user's alert window and sends matching unsent postings.
