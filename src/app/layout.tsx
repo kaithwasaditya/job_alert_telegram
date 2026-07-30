@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="brandIcon">
                 <BellRing size={20} />
               </span>
-              <span>Alert Bot</span>
+              <span className="serifAccent">Alert Bot</span>
             </Link>
             <nav className="nav">
               <Link href="/dashboard">Dashboard</Link>

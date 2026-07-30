@@ -6,7 +6,10 @@ export default function HomePage() {
   return (
     <main className="page hero">
       <section>
-        <h1>Job alerts from company career pages.</h1>
+        <p className="eyebrow">First-party ATS monitoring</p>
+        <h1>
+          Job alerts from <span className="serifAccent">career pages.</span>
+        </h1>
         <p>
           Pick the companies you care about, set location and keyword filters,
           and receive matched postings through Telegram. The system polls each

@@ -1,10 +1,9 @@
 import { auth } from "@clerk/nextjs/server";
-import { PauseCircle } from "lucide-react";
 import { redirect } from "next/navigation";
 import { AddCompanyForm } from "@/app/dashboard/add-company-form";
 import { AlertPreferencesForm } from "@/app/dashboard/alert-preferences-form";
+import { BulkActions } from "@/app/dashboard/bulk-actions";
 import { CompanyDirectory } from "@/app/dashboard/company-directory";
-import { pauseAllSubscriptions } from "@/app/dashboard/actions";
 import { TelegramConnectPanel } from "@/app/dashboard/telegram-connect-panel";
 import { requireSyncedUser } from "@/lib/clerk-user";
 import { softwareKeywordPresets } from "@/lib/constants";
@@ -46,20 +45,16 @@ export default async function DashboardPage() {
     <main className="page">
       <section className="dashboardHeader">
         <div>
-          <h1>Your alert desk.</h1>
+          <p className="eyebrow">Alert Bot</p>
+          <h1>
+            Your <span className="serifAccent">alert desk.</span>
+          </h1>
           <p>
             Track first-party ATS sources once globally, then receive only the
             roles matching your personal filters.
           </p>
         </div>
-        <div className="dashboardActions">
-          <form action={pauseAllSubscriptions}>
-            <button className="button" type="submit">
-              <PauseCircle size={17} />
-              Pause all
-            </button>
-          </form>
-        </div>
+        <BulkActions />
       </section>
 
       <section className="dashboardStats" style={{ marginBottom: 18 }}>
@@ -98,15 +93,6 @@ export default async function DashboardPage() {
             startCommand={telegramStartCommand(user.id)}
             isConnected={telegram?.isVerified ?? false}
           />
-          <section className="panel">
-            <h2>Setup needed</h2>
-            <div className="stack muted">
-              <span>Add Clerk keys to `.env`.</span>
-              <span>Add a Postgres `DATABASE_URL`.</span>
-              <span>Create a Telegram bot and set its token.</span>
-              <span>Run the seed and detection scripts.</span>
-            </div>
-          </section>
         </aside>
       </div>
     </main>

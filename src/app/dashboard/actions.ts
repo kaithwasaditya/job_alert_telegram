@@ -6,6 +6,7 @@ import { detectCompany } from "@/lib/ats";
 import { requireSyncedUser } from "@/lib/clerk-user";
 import { softwareKeywordPresets } from "@/lib/constants";
 import { postingMatchesSubscription } from "@/lib/matching";
+import { pollCompany } from "@/lib/poller";
 import { prisma } from "@/lib/prisma";
 import { findTelegramStartForUser, sendTelegramMessage } from "@/lib/telegram";
 import { slugify } from "@/lib/text";
@@ -122,6 +123,105 @@ export async function trackAllPollableCompanies() {
   );
 
   revalidatePath("/dashboard");
+}
+
+export async function trackCompaniesByName(input: string) {
+  const user = await requireSyncedUser();
+  const names = input
+    .split(",")
+    .map((name) => name.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (names.length === 0) {
+    return { ok: false, message: "Enter one or more company names." };
+  }
+
+  const companies = await prisma.company.findMany({
+    where: {
+      OR: names.flatMap((name) => [
+        { slug: name.replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") },
+        { name: { equals: name, mode: "insensitive" } },
+        { name: { contains: name, mode: "insensitive" } }
+      ])
+    },
+    select: { id: true, name: true, atsType: true, isActive: true }
+  });
+
+  const pollable = companies.filter(
+    (company) =>
+      company.isActive &&
+      ["greenhouse", "lever", "workday", "custom_scraped"].includes(company.atsType)
+  );
+
+  await Promise.all(
+    pollable.map((company) =>
+      prisma.userCompanySubscription.upsert({
+        where: {
+          userId_companyId: {
+            userId: user.id,
+            companyId: company.id
+          }
+        },
+        update: { isEnabled: true },
+        create: {
+          userId: user.id,
+          companyId: company.id,
+          isEnabled: true
+        }
+      })
+    )
+  );
+
+  revalidatePath("/dashboard");
+
+  if (pollable.length === 0) {
+    return { ok: false, message: "No pollable matches found for those names." };
+  }
+
+  const trackedNames = pollable.map((company) => company.name).join(", ");
+  const skipped = companies.length - pollable.length;
+  return {
+    ok: true,
+    message: skipped > 0 ? `Tracking ${trackedNames}. Skipped ${skipped} unsupported match${skipped === 1 ? "" : "es"}.` : `Tracking ${trackedNames}.`
+  };
+}
+
+export async function pollNow() {
+  await requireSyncedUser();
+  const companies = await prisma.company.findMany({
+    where: {
+      isActive: true,
+      atsType: { in: ["greenhouse", "lever", "workday", "custom_scraped"] }
+    },
+    orderBy: [{ lastPolledAt: "asc" }, { name: "asc" }],
+    take: 8
+  });
+
+  const results = [];
+
+  for (const company of companies) {
+    try {
+      const jobCount = await pollCompany(company);
+      results.push({ ok: true, name: company.name, jobCount });
+    } catch {
+      await prisma.company.update({
+        where: { id: company.id },
+        data: { lastPolledAt: new Date(), lastPollStatus: "error" }
+      });
+      results.push({ ok: false, name: company.name, jobCount: 0 });
+    }
+  }
+
+  revalidatePath("/dashboard");
+
+  const okCount = results.filter((result) => result.ok).length;
+  return {
+    ok: okCount > 0,
+    message:
+      results.length === 0
+        ? "No pollable companies found."
+        : `Polled ${okCount}/${results.length} companies.`
+  };
 }
 
 export async function checkTelegramConnection() {
