@@ -1,0 +1,438 @@
+:root {
+  --bg: #f6f7f4;
+  --panel: #ffffff;
+  --ink: #15201a;
+  --muted: #617068;
+  --line: #dce2dc;
+  --accent: #137a5b;
+  --accent-strong: #0d5f47;
+  --amber: #c47b12;
+  --red: #b33636;
+  --blue: #2468a8;
+  --shadow: 0 12px 34px rgba(31, 45, 38, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.topbar {
+  align-items: center;
+  background: rgba(246, 247, 244, 0.92);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  height: 68px;
+  justify-content: space-between;
+  padding: 0 clamp(18px, 5vw, 72px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(14px);
+}
+
+.brand,
+.nav {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+}
+
+.brand {
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.brandIcon {
+  align-items: center;
+  background: var(--accent);
+  border-radius: 8px;
+  color: white;
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+
+.nav {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.button,
+.iconButton {
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  gap: 8px;
+  min-height: 40px;
+  justify-content: center;
+  padding: 0 14px;
+}
+
+.buttonPrimary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.buttonDanger {
+  border-color: #efc9c9;
+  color: var(--red);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.page {
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: 42px clamp(18px, 5vw, 40px) 80px;
+}
+
+.hero {
+  display: grid;
+  gap: 28px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+  min-height: calc(100vh - 148px);
+  align-items: center;
+}
+
+.hero h1,
+.dashboardHeader h1 {
+  font-size: clamp(36px, 7vw, 78px);
+  line-height: 0.98;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.hero p,
+.dashboardHeader p {
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1.65;
+  max-width: 660px;
+}
+
+.heroPanel,
+.panel,
+.companyCard {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.heroPanel {
+  padding: 26px;
+}
+
+.metricGrid,
+.dashboardStats {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.metric,
+.stat {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.metric strong,
+.stat strong {
+  display: block;
+  font-size: 28px;
+}
+
+.metric span,
+.stat span,
+.muted {
+  color: var(--muted);
+}
+
+.dashboardHeader {
+  align-items: end;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-bottom: 28px;
+}
+
+.dashboardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.layoutGrid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  align-items: start;
+}
+
+.companyList {
+  display: grid;
+  gap: 12px;
+}
+
+.companyCard {
+  padding: 18px;
+}
+
+.companyTop {
+  align-items: start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.companyTitle {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 6px;
+}
+
+.badge {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 750;
+  padding: 4px 8px;
+  text-transform: uppercase;
+}
+
+.badgeGreen {
+  border-color: #b8dbc7;
+  color: var(--accent-strong);
+}
+
+.badgeAmber {
+  border-color: #ead09e;
+  color: var(--amber);
+}
+
+.badgeBlue {
+  border-color: #bad1eb;
+  color: var(--blue);
+}
+
+.controlGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 16px;
+}
+
+.controlGridFour {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+}
+
+.field label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.field input,
+.field select {
+  background: #fbfcfa;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  min-height: 42px;
+  padding: 0 11px;
+  width: 100%;
+}
+
+.panel {
+  padding: 16px;
+}
+
+.panel h2 {
+  font-size: 18px;
+  margin: 0 0 12px;
+}
+
+.stack {
+  display: grid;
+  gap: 12px;
+}
+
+.compactStack {
+  display: grid;
+  gap: 10px;
+}
+
+.formRow {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.formRow input {
+  min-width: 0;
+}
+
+.empty {
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  padding: 28px;
+  text-align: center;
+}
+
+.keywordGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.tagBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.directoryToolbar {
+  align-items: start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.chip {
+  background: #fbfcfa;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.chipActive {
+  background: #e3f3ec;
+  border-color: #acd8c4;
+  color: var(--accent-strong);
+}
+
+.commandBox {
+  background: #f0f3ef;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+  padding: 12px;
+}
+
+.detailsBox {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.detailsBox summary {
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.detailsBox .commandBox {
+  margin-top: 10px;
+}
+
+.buttonGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.buttonGrid .button {
+  padding: 0 10px;
+}
+
+.panelHeaderInline {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+@media (max-width: 860px) {
+  .hero,
+  .dashboardHeader,
+  .layoutGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboardActions {
+    justify-content: flex-start;
+  }
+
+  .controlGrid,
+  .controlGridFour,
+  .metricGrid,
+  .dashboardStats {
+    grid-template-columns: 1fr;
+  }
+
+  .companyTop,
+  .directoryToolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .formRow {
+    grid-template-columns: 1fr;
+  }
+
+  .buttonGrid {
+    grid-template-columns: 1fr;
+  }
+}

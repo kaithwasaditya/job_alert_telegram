@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AtsType {
+  greenhouse
+  lever
+  workday
+  custom_scraped
+  custom
+  unsupported
+}
+
+enum PollStatus {
+  ok
+  error
+  pending
+}
+
+enum AlertFrequency {
+  hourly
+  every_6h
+  daily_morning
+  daily_evening
+}
+
+enum ChannelType {
+  telegram
+  whatsapp
+}
+
+enum NotificationStatus {
+  sent
+  failed
+}
+
+enum ExperienceLevel {
+  any
+  internship
+  entry
+  mid
+  senior
+  staff
+  manager
+}
+
+model User {
+  id                    String                 @id
+  email                 String                 @unique
+  createdAt             DateTime               @default(now()) @map("created_at")
+  alertPreference        UserAlertPreference?
+  subscriptions          UserCompanySubscription[]
+  notificationChannels   NotificationChannel[]
+  notifications          NotificationLog[]
+
+  @@map("users")
+}
+
+model UserAlertPreference {
+  id              String          @id @default(cuid())
+  userId          String          @unique @map("user_id")
+  locationFilter  String          @default("Any") @map("location_filter")
+  keywordFilter   String[]        @default([]) @map("keyword_filter")
+  experienceLevel ExperienceLevel @default(any) @map("experience_level")
+  alertFrequency  AlertFrequency  @default(every_6h) @map("alert_frequency")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_alert_preferences")
+}
+
+model Company {
+  id                String        @id @default(cuid())
+  name              String
+  slug              String        @unique
+  atsType           AtsType       @map("ats_type")
+  atsIdentifier     String        @map("ats_identifier")
+  tags              String[]      @default([])
+  isActive          Boolean       @default(true) @map("is_active")
+  lastPolledAt      DateTime?     @map("last_polled_at")
+  lastPollStatus    PollStatus    @default(pending) @map("last_poll_status")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  postings          JobPosting[]
+  subscriptions     UserCompanySubscription[]
+
+  @@map("companies")
+}
+
+model JobPosting {
+  id              String            @id @default(cuid())
+  companyId       String            @map("company_id")
+  externalId      String            @map("external_id")
+  title           String
+  locationRaw     String?           @map("location_raw")
+  locationCountry String?           @map("location_country")
+  department      String?
+  experienceLevel ExperienceLevel    @default(any) @map("experience_level")
+  url             String
+  firstSeenAt     DateTime          @default(now()) @map("first_seen_at")
+  lastSeenAt      DateTime          @default(now()) @map("last_seen_at")
+  isActive        Boolean           @default(true) @map("is_active")
+  company         Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  notifications   NotificationLog[]
+
+  @@unique([companyId, externalId])
+  @@index([firstSeenAt])
+  @@map("job_postings")
+}
+
+model UserCompanySubscription {
+  id              String         @id @default(cuid())
+  userId          String         @map("user_id")
+  companyId       String         @map("company_id")
+  isEnabled       Boolean        @default(true) @map("is_enabled")
+  locationFilter  String[]       @default([]) @map("location_filter")
+  keywordFilter   String[]       @default([]) @map("keyword_filter")
+  alertFrequency  AlertFrequency @default(every_6h) @map("alert_frequency")
+  lastNotifiedAt  DateTime?      @map("last_notified_at")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company         Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+  @@map("user_company_subscriptions")
+}
+
+model NotificationChannel {
+  id                String      @id @default(cuid())
+  userId            String      @map("user_id")
+  channelType       ChannelType @map("channel_type")
+  channelIdentifier String      @map("channel_identifier")
+  isVerified        Boolean     @default(false) @map("is_verified")
+  createdAt         DateTime    @default(now()) @map("created_at")
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, channelType])
+  @@map("notification_channels")
+}
+
+model NotificationLog {
+  id            String             @id @default(cuid())
+  userId        String             @map("user_id")
+  jobPostingId  String             @map("job_posting_id")
+  channelType   ChannelType        @map("channel_type")
+  sentAt        DateTime           @default(now()) @map("sent_at")
+  status        NotificationStatus
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobPosting    JobPosting         @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobPostingId, channelType])
+  @@map("notifications_log")
+}
