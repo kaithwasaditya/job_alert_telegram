@@ -28,30 +28,28 @@ export default function HomePage() {
           </SignedIn>
         </div>
       </section>
-      <section className="heroPanel" aria-label="Product summary">
-        <div className="metricGrid">
-          <div className="metric">
-            <Building2 size={22} />
-            <strong>11</strong>
-            <span>seed companies</span>
-          </div>
-          <div className="metric">
-            <SlidersHorizontal size={22} />
-            <strong>4</strong>
-            <span>alert windows</span>
-          </div>
-          <div className="metric">
-            <Send size={22} />
-            <strong>Telegram</strong>
-            <span>MVP delivery channel</span>
-          </div>
-          <div className="metric">
-            <ArrowRight size={22} />
-            <strong>ATS</strong>
-            <span>Greenhouse and Lever first</span>
-          </div>
-        </div>
-      </section>
+     <div className="heroStats">
+  <div className="stat">
+    <Building2 size={16} />
+    <strong>11</strong>
+    <span>seed companies</span>
+  </div>
+  <div className="stat">
+    <SlidersHorizontal size={16} />
+    <strong>4</strong>
+    <span>alert windows</span>
+  </div>
+  <div className="stat">
+    <Send size={16} />
+    <strong>Telegram</strong>
+    <span>delivery channel</span>
+  </div>
+  <div className="stat">
+    <ArrowRight size={16} />
+    <strong>ATS</strong>
+    <span>Greenhouse & Lever</span>
+  </div>
+</div>
     </main>
   );
 }

@@ -76,9 +76,8 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      <div style={{ marginBottom: 18 }}>
         <AlertPreferencesForm preference={preference} />
-      </div>
+   
 
       <div className="layoutGrid">
         <CompanyDirectory companies={companies} />
