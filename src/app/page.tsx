@@ -31,7 +31,7 @@ export default function HomePage() {
      <div className="heroStats">
   <div className="stat">
     <Building2 size={16} />
-    <strong>11</strong>
+    <strong>72</strong>
     <span>seed companies</span>
   </div>
   <div className="stat">
@@ -47,7 +47,7 @@ export default function HomePage() {
   <div className="stat">
     <ArrowRight size={16} />
     <strong>ATS</strong>
-    <span>Greenhouse & Lever</span>
+    <span>Greenhouse, Lever & Workday</span>
   </div>
 </div>
     </main>
