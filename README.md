@@ -1,6 +1,18 @@
 # Alert Bot
 
-Job alert tracker for first-party company career pages. Users sign in with Clerk, subscribe to companies, set location and keyword filters, and receive Telegram alerts when matching jobs are found.
+Job alert tracker for first-party company career pages (ATS: Workday, Greenhouse, Lever). Users sign in with Clerk, subscribe to companies, set role/location/experience/keyword filters, and receive Telegram alerts on their chosen schedule when matching jobs are found.
+
+## Features
+
+- **72 tracked companies**, with live polling across 25 companies via Workday, Greenhouse, and Lever
+- **Custom company tracking** — add companies by comma-separated name (`CRED, Razorpay, Google`) or by pasting a careers page URL
+- **Curated segments** — filter the company list by All, Pollable, FAANG+, Product, Startups, Fintech, WITCH/Service, India, Global
+- **Role filtering** via 25+ clickable role pills (SWE, Backend, Frontend, DevOps, Data Engineer, ML, AI, Security, PM, New Grad, Intern, etc.)
+- **Experience & location filters** with dropdown toggles, plus free-text keyword matching (e.g. `React, Node, Security`)
+- **4 configurable alert windows** — hourly, every 6 hours, daily morning, daily evening
+- **Telegram delivery** with structured, per-role alerts (title, location, direct application link), connect/verify/send flow, and setup via deep link
+- **Dashboard controls** — live poller health status per company, manual "Poll now," "Track all" / "Pause all," and per-user saved filters
+- **Clerk authentication** for sign-in/sign-up
 
 ## Clerk setup
 
@@ -25,7 +37,7 @@ npm run seed
 npm run dev
 ```
 
-Set `DATABASE_URL` to a Postgres database before running the migration.
+Set `DATABASE_URL` to a Postgres database (this project uses Neon) before running the migration.
 
 ## Telegram setup
 
@@ -63,4 +75,4 @@ For Vercel web cron, configure:
 */15 * * * *
 ```
 
-The poller updates global job postings. The dispatcher checks each user's alert window and sends matching unsent postings.
+The poller updates global job postings. The dispatcher checks each user's alert window (hourly, 6-hourly, morning, evening) and sends matching unsent postings.
