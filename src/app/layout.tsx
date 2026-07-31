@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 
+
 export const metadata: Metadata = {
   title: "Alert Bot",
   description: "Track first-party career pages and receive matched job alerts on Telegram."
