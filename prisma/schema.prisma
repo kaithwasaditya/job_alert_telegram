@@ -11,6 +11,8 @@ enum AtsType {
   greenhouse
   lever
   workday
+  ashby
+  smartrecruiters
   custom_scraped
   custom
   unsupported

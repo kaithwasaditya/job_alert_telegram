@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { detectCompany } from "@/lib/ats";
+import { detectCompany, pollableAtsTypes } from "@/lib/ats";
 import { requireSyncedUser } from "@/lib/clerk-user";
 import { softwareKeywordPresets } from "@/lib/constants";
 import { postingMatchesSubscription } from "@/lib/matching";
@@ -98,7 +98,7 @@ export async function trackAllPollableCompanies() {
   const companies = await prisma.company.findMany({
     where: {
       isActive: true,
-      atsType: { in: ["greenhouse", "lever", "workday", "custom_scraped"] }
+      atsType: { in: pollableAtsTypes }
     },
     select: { id: true }
   });
@@ -150,7 +150,7 @@ export async function trackCompaniesByName(input: string) {
   const pollable = companies.filter(
     (company) =>
       company.isActive &&
-      ["greenhouse", "lever", "workday", "custom_scraped"].includes(company.atsType)
+      (pollableAtsTypes as readonly string[]).includes(company.atsType)
   );
 
   await Promise.all(
@@ -191,7 +191,7 @@ export async function pollNow() {
   const companies = await prisma.company.findMany({
     where: {
       isActive: true,
-      atsType: { in: ["greenhouse", "lever", "workday", "custom_scraped"] }
+      atsType: { in: pollableAtsTypes }
     },
     orderBy: [{ lastPolledAt: "asc" }, { name: "asc" }],
     take: 8

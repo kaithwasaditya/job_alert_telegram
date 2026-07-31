@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isCronAuthorized } from "@/lib/cron-auth";
+import { pollableAtsTypes } from "@/lib/ats";
 import { pollCompany } from "@/lib/poller";
 import { prisma } from "@/lib/prisma";
 
@@ -11,7 +12,7 @@ export async function POST(request: Request) {
   const companies = await prisma.company.findMany({
     where: {
       isActive: true,
-      atsType: { in: ["greenhouse", "lever", "workday", "custom_scraped"] }
+      atsType: { in: pollableAtsTypes }
     },
     orderBy: { lastPolledAt: "asc" },
     take: 20

@@ -1,6 +1,7 @@
 "use client";
 
 import type { AtsType } from "@prisma/client";
+import { pollableAtsTypes } from "@/lib/ats";
 
 type Props = {
   company: {
@@ -17,21 +18,19 @@ type Props = {
 };
 
 export function CompanySubscriptionCard({ company, subscription }: Props) {
-  const canPoll =
-    company.atsType === "greenhouse" ||
-    company.atsType === "lever" ||
-    company.atsType === "workday" ||
-    company.atsType === "custom_scraped";
+  const canPoll = (pollableAtsTypes as readonly string[]).includes(company.atsType);
   const isTracked = subscription?.isEnabled ?? false;
 
   return (
-    <article className="companyCard">
-      <h3 className="companyTitle">{company.name}</h3>
-      <div className="tabletMeta">
-        <span className={isTracked ? "badge badgeGreen" : "badge"}>{isTracked ? "tracked" : "untracked"}</span>
-        <span className={canPoll ? "badge badgeBlue" : "badge badgeAmber"}>{company.atsType}</span>
-      </div>
-      <p className="muted tabletCount">{company._count.postings} jobs</p>
+    <article className="companyCard companyCardInline">
+      <h3 className="companyName">{company.name}</h3>
+      <span className={isTracked ? "companyTrackIcon tracked" : "companyTrackIcon"}>
+        {isTracked ? "✓" : "✗"}
+      </span>
+      <span className="companyJobCount">{company._count.postings} jobs</span>
+      <span className={canPoll ? "companyAts companyAtsPollable" : "companyAts"}>
+        {company.atsType.replace(/_/g, " ")}
+      </span>
     </article>
   );
 }

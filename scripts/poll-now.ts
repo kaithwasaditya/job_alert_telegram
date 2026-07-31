@@ -1,3 +1,4 @@
+import { pollableAtsTypes } from "../src/lib/ats";
 import { pollCompany } from "../src/lib/poller";
 import { prisma } from "../src/lib/prisma";
 
@@ -6,7 +7,7 @@ async function main() {
   const companies = await prisma.company.findMany({
     where: {
       isActive: true,
-      atsType: { in: ["greenhouse", "lever", "workday", "custom_scraped"] },
+      atsType: { in: pollableAtsTypes },
       ...(requestedSlugs.length > 0 ? { slug: { in: requestedSlugs } } : {})
     },
     orderBy: [{ lastPolledAt: "asc" }, { name: "asc" }]

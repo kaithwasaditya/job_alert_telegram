@@ -54,13 +54,12 @@ export async function POST(request: Request) {
 
     const unsent = [];
     for (const posting of subscription.company.postings) {
-      const alreadySent = await prisma.notificationLog.findUnique({
+      const alreadySent = await prisma.notificationLog.findFirst({
         where: {
-          userId_jobPostingId_channelType: {
-            userId: subscription.userId,
-            jobPostingId: posting.id,
-            channelType: "telegram"
-          }
+          userId: subscription.userId,
+          jobPostingId: posting.id,
+          channelType: "telegram",
+          status: "sent"
         }
       });
       if (!alreadySent && postingMatchesSubscription(posting, preference)) {
@@ -69,10 +68,6 @@ export async function POST(request: Request) {
     }
 
     if (unsent.length === 0) {
-      await prisma.userCompanySubscription.update({
-        where: { id: subscription.id },
-        data: { lastNotifiedAt: new Date() }
-      });
       continue;
     }
 
@@ -106,10 +101,12 @@ export async function POST(request: Request) {
       });
     }
 
-    await prisma.userCompanySubscription.update({
-      where: { id: subscription.id },
-      data: { lastNotifiedAt: new Date() }
-    });
+    if (sent.ok) {
+      await prisma.userCompanySubscription.update({
+        where: { id: subscription.id },
+        data: { lastNotifiedAt: new Date() }
+      });
+    }
 
     results.push({ subscription: subscription.id, status: sent.ok ? "sent" : "failed", count: unsent.length });
   }

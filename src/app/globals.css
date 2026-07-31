@@ -341,34 +341,72 @@ select {
 .companyTabletGrid {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 }
 
 .companyCard {
-  min-height: 128px;
-  padding: 14px;
+  min-height: 0;
+  padding: 12px 14px;
 }
 
-.companyTitle {
+.companyCardInline {
   align-items: center;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  font-size: 16px;
+  gap: 10px;
+}
+
+.companyName {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0;
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.companyTrackIcon {
+  align-items: center;
+  border-radius: 50%;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 12px;
+  font-weight: 700;
+  height: 22px;
+  justify-content: center;
+  width: 22px;
+  background: #f0f0ec;
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+
+.companyTrackIcon.tracked {
+  background: #eaf8f1;
+  border-color: #b7e3cc;
+  color: var(--green);
+}
+
+.companyJobCount {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.companyAts {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
   font-weight: 500;
-  line-height: 1.15;
-  margin: 0 0 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-left: auto;
 }
 
-.tabletMeta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.tabletCount {
-  font-size: 13px;
-  margin: 12px 0 0;
+.companyAtsPollable {
+  color: #2468a8;
 }
 
 .badge {

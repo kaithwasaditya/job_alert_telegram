@@ -3,7 +3,10 @@ import { BellRing } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import Image from "next/image";
+import logoImg from "@/app/icon.png"; // adjust path if your navbar is elsewhere
 
+<Image src={logoImg} alt="Alert Bot" width={28} height={28} className="logo-icon" />
 
 export const metadata: Metadata = {
   title: "Alert Bot",
