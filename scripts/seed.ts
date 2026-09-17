@@ -3,6 +3,9 @@ import { seedCompanies } from "../src/lib/constants";
 import { pool, query } from "../src/lib/db";
 
 async function main() {
+  const allowedSlugs = seedCompanies.map((c) => c.slug);
+  await query(`DELETE FROM companies WHERE NOT (slug = ANY($1::text[]))`, [allowedSlugs]);
+
   for (const company of seedCompanies) {
     const detected = await detectCompany(company.slug);
     const tags = [...company.tags, detected.atsType === "unsupported" ? "" : "pollable"].filter(Boolean);

@@ -24,7 +24,8 @@ export default async function DashboardPage() {
          ucs.is_enabled AS "subscriptionIsEnabled"
        FROM companies c
        LEFT JOIN user_company_subscriptions ucs ON ucs.company_id = c.id AND ucs.user_id = $1
-       ORDER BY c.is_active DESC, c.name ASC`,
+       WHERE c.is_active = TRUE
+       ORDER BY c.name ASC`,
       [user.id]
     ),
     query(
