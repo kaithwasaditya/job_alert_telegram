@@ -31,47 +31,53 @@ export const softwareKeywordPresets = [
   "Software Development Engineer",
   "SWE",
   "SDE",
-  "Backend",
-  "Frontend",
-  "Full Stack",
-  "Platform",
-  "Infrastructure",
-  "DevOps",
-  "SRE",
-  "Site Reliability",
-  "Cloud",
-  "Distributed Systems",
-  "Android",
-  "iOS",
-  "Mobile",
-  "Data Engineer",
-  "Data Scientist",
-  "Analytics Engineer",
-  "Machine Learning",
-  "ML Engineer",
-  "Applied Scientist",
-  "AI",
-  "Security Engineer",
-  "QA",
-  "Automation",
-  "Product Engineer",
-  "Product Manager",
+  "Backend Engineer",
+  "Frontend Engineer",
+  "Full Stack Engineer",
+  "Platform Engineer",
+  "Infrastructure Engineer",
   "New Grad",
   "Intern"
 ] as const;
 
 export const companyTagOptions = [
   { value: "all", label: "All" },
-  { value: "pollable", label: "Pollable" },
-  { value: "big-tech", label: "Big Tech" },
-  { value: "product", label: "Product" },
-  { value: "data", label: "Data / Security" }
+  { value: "greenhouse", label: "Greenhouse" },
+  { value: "lever", label: "Lever" },
+  { value: "ashby", label: "Ashby" },
+  { value: "workday", label: "Workday" }
 ] as const;
 
+export const representativeAtsTags = ["greenhouse", "lever", "ashby", "workday"] as const;
+
 export const seedCompanies = [
-  { name: "Google", slug: "google", tags: ["big-tech", "product"] },
-  { name: "Microsoft", slug: "microsoft", tags: ["big-tech", "product"] },
-  { name: "Atlassian", slug: "atlassian", tags: ["product"] },
-  { name: "Snowflake", slug: "snowflake", tags: ["product", "data"] },
-  { name: "Rubrik", slug: "rubrik", tags: ["product", "data"] }
+  {
+    name: "Airbnb",
+    slug: "airbnb",
+    tags: ["greenhouse"],
+    source: { atsType: "greenhouse", atsIdentifier: "airbnb" }
+  },
+  {
+    name: "Spotify",
+    slug: "spotify",
+    tags: ["lever"],
+    source: { atsType: "lever", atsIdentifier: "spotify" }
+  },
+  {
+    name: "Linear",
+    slug: "linear",
+    tags: ["ashby"],
+    source: { atsType: "ashby", atsIdentifier: "linear" }
+  },
+  {
+    name: "Salesforce",
+    slug: "salesforce",
+    tags: ["workday"],
+    source: {
+      atsType: "workday",
+      atsIdentifier: "https://salesforce.wd12.myworkdayjobs.com/en-US/External_Career_Site"
+    }
+  }
 ] as const;
+
+export const representativeCompanySlugs = seedCompanies.map((company) => company.slug);

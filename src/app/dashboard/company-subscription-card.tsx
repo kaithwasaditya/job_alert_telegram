@@ -1,7 +1,7 @@
 "use client";
 
 import type { AtsType } from "@/lib/ats";
-import { pollableAtsTypes } from "@/lib/ats";
+import { formatAtsName, pollableAtsTypes } from "@/lib/ats";
 
 type Props = {
   company: {
@@ -29,7 +29,7 @@ export function CompanySubscriptionCard({ company, subscription }: Props) {
       </span>
       <span className="companyJobCount">{company._count.postings} jobs</span>
       <span className={canPoll ? "companyAts companyAtsPollable" : "companyAts"}>
-        {company.atsType.replace(/_/g, " ")}
+        {formatAtsName(company.atsType)}
       </span>
     </article>
   );

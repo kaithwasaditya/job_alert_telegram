@@ -6,7 +6,7 @@ import { pauseAllSubscriptions, pollNow, trackAllPollableCompanies } from "./act
 
 export function BulkActions() {
   const [status, setStatus] = useState<"idle" | "tracked" | "paused">("idle");
-  const [pollMessage, setPollMessage] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [isTracking, startTracking] = useTransition();
   const [isPausing, startPausing] = useTransition();
   const [isPolling, startPolling] = useTransition();
@@ -19,10 +19,14 @@ export function BulkActions() {
           disabled={isTracking || isPausing || isPolling}
           type="button"
           onClick={() => {
-            setPollMessage(null);
+            setActionMessage(null);
             startPolling(async () => {
-              const result = await pollNow();
-              setPollMessage(result.message);
+              try {
+                const result = await pollNow();
+                setActionMessage(result.message);
+              } catch {
+                setActionMessage("Could not run the poller right now.");
+              }
             });
           }}
         >
@@ -34,9 +38,15 @@ export function BulkActions() {
         disabled={isTracking || isPausing || isPolling}
         type="button"
         onClick={() => {
+          setActionMessage(null);
           startTracking(async () => {
-            await trackAllPollableCompanies();
-            setStatus("tracked");
+            try {
+              const result = await trackAllPollableCompanies();
+              setActionMessage(result.message);
+              if (result.ok) setStatus("tracked");
+            } catch {
+              setActionMessage("Could not track companies right now.");
+            }
           });
         }}
       >
@@ -48,9 +58,15 @@ export function BulkActions() {
         disabled={isTracking || isPausing || isPolling}
         type="button"
         onClick={() => {
+          setActionMessage(null);
           startPausing(async () => {
-            await pauseAllSubscriptions();
-            setStatus("paused");
+            try {
+              const result = await pauseAllSubscriptions();
+              setActionMessage(result.message);
+              if (result.ok) setStatus("paused");
+            } catch {
+              setActionMessage("Could not pause subscriptions right now.");
+            }
           });
         }}
       >
@@ -58,7 +74,7 @@ export function BulkActions() {
         {isPausing ? "Pausing..." : status === "paused" ? "Paused all" : "Pause all"}
       </button>
       </div>
-      {pollMessage ? <p className="actionNote">{pollMessage}</p> : null}
+      {actionMessage ? <p className="actionNote">{actionMessage}</p> : null}
     </div>
   );
 }

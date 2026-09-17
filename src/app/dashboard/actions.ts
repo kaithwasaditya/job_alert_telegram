@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { AtsType } from "@/lib/ats";
 import { detectCompany, pollableAtsTypes } from "@/lib/ats";
 import { requireSyncedUser } from "@/lib/clerk-user";
-import { softwareKeywordPresets } from "@/lib/constants";
+import { representativeAtsTags, representativeCompanySlugs, softwareKeywordPresets } from "@/lib/constants";
 import { query } from "@/lib/db";
 import { postingMatchesSubscription } from "@/lib/matching";
 import { pollCompany } from "@/lib/poller";
@@ -71,32 +71,53 @@ export async function updateAlertPreferences(input: z.infer<typeof preferencesSc
 }
 
 export async function pauseAllSubscriptions() {
-  const user = await requireSyncedUser();
-  await query(
-    `UPDATE user_company_subscriptions SET is_enabled = FALSE WHERE user_id = $1`,
-    [user.id]
-  );
-  revalidatePath("/dashboard");
+  try {
+    const user = await requireSyncedUser();
+    const res = await query(
+      `UPDATE user_company_subscriptions SET is_enabled = FALSE WHERE user_id = $1`,
+      [user.id]
+    );
+    revalidatePath("/dashboard");
+    return {
+      ok: true,
+      message: `Paused ${res.rowCount ?? 0} subscription${res.rowCount === 1 ? "" : "s"}.`
+    };
+  } catch {
+    return { ok: false, message: "Could not pause subscriptions right now." };
+  }
 }
 
 export async function trackAllPollableCompanies() {
-  const user = await requireSyncedUser();
-  const res = await query(
-    `SELECT id FROM companies WHERE is_active = TRUE AND ats_type = ANY($1::text[])`,
-    [pollableAtsTypes]
-  );
-  const companyIds: string[] = res.rows.map((r) => r.id);
-
-  for (const companyId of companyIds) {
-    await query(
-      `INSERT INTO user_company_subscriptions (user_id, company_id, is_enabled)
-       VALUES ($1, $2, TRUE)
-       ON CONFLICT (user_id, company_id) DO UPDATE SET is_enabled = TRUE`,
-      [user.id, companyId]
+  try {
+    const user = await requireSyncedUser();
+    const res = await query(
+      `WITH pollable_companies AS (
+         SELECT id
+         FROM companies
+         WHERE is_active = TRUE
+           AND ats_type = ANY($2::text[])
+           AND (slug = ANY($3::text[]) OR tags && $4::text[])
+       ),
+       upserted AS (
+         INSERT INTO user_company_subscriptions (user_id, company_id, is_enabled)
+         SELECT $1, id, TRUE
+         FROM pollable_companies
+         ON CONFLICT (user_id, company_id) DO UPDATE SET is_enabled = TRUE
+         RETURNING company_id
+       )
+       SELECT COUNT(*)::int AS count FROM upserted`,
+      [user.id, pollableAtsTypes, representativeCompanySlugs, representativeAtsTags]
     );
-  }
+    const count = res.rows[0]?.count ?? 0;
 
-  revalidatePath("/dashboard");
+    revalidatePath("/dashboard");
+    return {
+      ok: true,
+      message: count === 0 ? "No pollable companies found." : `Tracking ${count} ATS-backed compan${count === 1 ? "y" : "ies"}.`
+    };
+  } catch {
+    return { ok: false, message: "Could not track companies right now." };
+  }
 }
 
 export async function trackCompaniesByName(input: string) {
@@ -150,42 +171,47 @@ export async function trackCompaniesByName(input: string) {
 }
 
 export async function pollNow() {
-  await requireSyncedUser();
-  const res = await query(
-    `SELECT id, slug, ats_type AS "atsType", ats_identifier AS "atsIdentifier", name
-     FROM companies
-     WHERE is_active = TRUE AND ats_type = ANY($1::text[])
-     ORDER BY last_polled_at ASC NULLS FIRST, name ASC
-     LIMIT 8`,
-    [pollableAtsTypes]
-  );
-  const companies = res.rows as Array<{ id: string; slug: string; atsType: AtsType; atsIdentifier: string; name: string }>;
+  try {
+    await requireSyncedUser();
+    const res = await query(
+      `SELECT id, slug, ats_type AS "atsType", ats_identifier AS "atsIdentifier", name
+       FROM companies
+       WHERE is_active = TRUE AND ats_type = ANY($1::text[])
+         AND (slug = ANY($2::text[]) OR tags && $3::text[])
+       ORDER BY last_polled_at ASC NULLS FIRST, name ASC
+       LIMIT 8`,
+      [pollableAtsTypes, representativeCompanySlugs, representativeAtsTags]
+    );
+    const companies = res.rows as Array<{ id: string; slug: string; atsType: AtsType; atsIdentifier: string; name: string }>;
 
-  const results = [];
+    const results = [];
 
-  for (const company of companies) {
-    try {
-      const jobCount = await pollCompany(company);
-      results.push({ ok: true, name: company.name, jobCount });
-    } catch {
-      await query(
-        `UPDATE companies SET last_polled_at = NOW(), last_poll_status = 'error' WHERE id = $1`,
-        [company.id]
-      );
-      results.push({ ok: false, name: company.name, jobCount: 0 });
+    for (const company of companies) {
+      try {
+        const jobCount = await pollCompany(company);
+        results.push({ ok: true, name: company.name, jobCount });
+      } catch {
+        await query(
+          `UPDATE companies SET last_polled_at = NOW(), last_poll_status = 'error' WHERE id = $1`,
+          [company.id]
+        );
+        results.push({ ok: false, name: company.name, jobCount: 0 });
+      }
     }
+
+    revalidatePath("/dashboard");
+
+    const okCount = results.filter((result) => result.ok).length;
+    return {
+      ok: okCount > 0,
+      message:
+        results.length === 0
+          ? "No pollable companies found."
+          : `Polled ${okCount}/${results.length} companies.`
+    };
+  } catch {
+    return { ok: false, message: "Could not run the poller right now." };
   }
-
-  revalidatePath("/dashboard");
-
-  const okCount = results.filter((result) => result.ok).length;
-  return {
-    ok: okCount > 0,
-    message:
-      results.length === 0
-        ? "No pollable companies found."
-        : `Polled ${okCount}/${results.length} companies.`
-  };
 }
 
 export async function checkTelegramConnection() {
@@ -352,15 +378,22 @@ export async function addCompanyFromUrl(formData: FormData) {
   const slug = slugify(name);
 
   const companyRes = await query(
-    `INSERT INTO companies (name, slug, ats_type, ats_identifier, is_active, last_poll_status)
-     VALUES ($1, $2, $3, $4, TRUE, 'pending')
+    `INSERT INTO companies (name, slug, ats_type, ats_identifier, tags, is_active, last_poll_status)
+     VALUES ($1, $2, $3, $4, $5, TRUE, 'pending')
      ON CONFLICT (slug) DO UPDATE SET
        ats_type = EXCLUDED.ats_type,
        ats_identifier = EXCLUDED.ats_identifier,
+       tags = EXCLUDED.tags,
        is_active = TRUE,
        last_poll_status = 'pending'
      RETURNING id, name`,
-    [name.charAt(0).toUpperCase() + name.slice(1), slug, detection.atsType, detection.atsIdentifier]
+    [
+      name.charAt(0).toUpperCase() + name.slice(1),
+      slug,
+      detection.atsType,
+      detection.atsIdentifier,
+      Array.from(new Set(["pollable", detection.atsType])),
+    ]
   );
   const company = companyRes.rows[0];
 

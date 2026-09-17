@@ -11,8 +11,8 @@ export default function HomePage() {
           Job alerts from <span className="serifAccent">career pages.</span>
         </h1>
         <p>
-          Pick the companies you care about, set location and keyword filters,
-          and receive matched postings through Telegram. The system polls each
+          Pick representative ATS-backed companies, set SWE/SDE filters, and
+          receive matched postings through Telegram. The system polls each
           company once, then fans out relevant alerts to subscribers.
         </p>
         <div className="dashboardActions">
@@ -31,8 +31,8 @@ export default function HomePage() {
      <div className="heroStats">
   <div className="stat">
     <Building2 size={16} />
-    <strong>72</strong>
-    <span>seed companies</span>
+    <strong>4</strong>
+    <span>representative companies</span>
   </div>
   <div className="stat">
     <SlidersHorizontal size={16} />
@@ -46,8 +46,8 @@ export default function HomePage() {
   </div>
   <div className="stat">
     <ArrowRight size={16} />
-    <strong>ATS</strong>
-    <span>Greenhouse, Lever & Workday</span>
+    <strong>4 ATS</strong>
+    <span>major sources</span>
   </div>
 </div>
     </main>

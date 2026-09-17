@@ -6,7 +6,7 @@ import { BulkActions } from "@/app/dashboard/bulk-actions";
 import { CompanyDirectory } from "@/app/dashboard/company-directory";
 import { TelegramConnectPanel } from "@/app/dashboard/telegram-connect-panel";
 import { requireSyncedUser } from "@/lib/clerk-user";
-import { softwareKeywordPresets } from "@/lib/constants";
+import { representativeAtsTags, representativeCompanySlugs, softwareKeywordPresets } from "@/lib/constants";
 import { query } from "@/lib/db";
 import { telegramDeepLink, telegramStartCommand } from "@/lib/telegram";
 
@@ -25,8 +25,9 @@ export default async function DashboardPage() {
        FROM companies c
        LEFT JOIN user_company_subscriptions ucs ON ucs.company_id = c.id AND ucs.user_id = $1
        WHERE c.is_active = TRUE
+         AND (c.slug = ANY($2::text[]) OR c.tags && $3::text[])
        ORDER BY c.name ASC`,
-      [user.id]
+      [user.id, representativeCompanySlugs, representativeAtsTags]
     ),
     query(
       `SELECT channel_type AS "channelType", channel_identifier AS "channelIdentifier", is_verified AS "isVerified"
@@ -73,6 +74,7 @@ export default async function DashboardPage() {
   const subscriptionCount = subCountRes.rows[0]?.count ?? 0;
   const telegram = channels.find((channel) => channel.channelType === "telegram");
   const deepLink = telegramDeepLink(user.id);
+  const atsCount = new Set(companies.map((company) => company.atsType)).size;
 
   return (
     <main className="page">
@@ -83,8 +85,8 @@ export default async function DashboardPage() {
             Your <span className="serifAccent">alert desk.</span>
           </h1>
           <p>
-            Track first-party ATS sources once globally, then receive only the
-            roles matching your personal filters.
+            Track one representative company per major ATS, then receive only
+            the roles matching your personal filters.
           </p>
         </div>
         <BulkActions />
@@ -93,19 +95,19 @@ export default async function DashboardPage() {
       <section className="dashboardStats" style={{ marginBottom: 18 }}>
         <div className="stat">
           <strong>{companies.length}</strong>
-          <span>companies available</span>
+          <span>representative companies</span>
         </div>
         <div className="stat">
-          <strong>{subscriptionCount}</strong>
-          <span>active subscriptions</span>
+          <strong>{atsCount}</strong>
+          <span>ATS covered</span>
         </div>
         <div className="stat">
           <strong>{telegram?.isVerified ? "Connected" : "Not connected"}</strong>
           <span>Telegram status</span>
         </div>
         <div className="stat">
-          <strong>{companies.filter((company) => company.lastPollStatus === "ok").length}</strong>
-          <span>healthy pollers</span>
+          <strong>{subscriptionCount}</strong>
+          <span>active subscriptions</span>
         </div>
       </section>
 

@@ -1,13 +1,13 @@
 # Alert Bot
 
-Job alert tracker for first-party company career pages (ATS: Workday, Greenhouse, Lever). Users sign in with Clerk, subscribe to companies, set role/location/experience/keyword filters, and receive Telegram alerts on their chosen schedule when matching jobs are found.
+Job alert tracker for first-party company career pages (ATS: Greenhouse, Lever, Ashby, Workday). Users sign in with Clerk, subscribe to representative ATS-backed companies, set role/location/experience/keyword filters, and receive Telegram alerts on their chosen schedule when matching jobs are found.
 
 ## Features
 
-- **72 tracked companies**, with live polling across 25 companies via Workday, Greenhouse, and Lever
-- **Custom company tracking** — add companies by comma-separated name (`CRED, Razorpay, Google`) or by pasting a careers page URL
-- **Curated segments** — filter the company list by All, Pollable, FAANG+, Product, Startups, Fintech, WITCH/Service, India, Global
-- **Role filtering** via 25+ clickable role pills (SWE, Backend, Frontend, DevOps, Data Engineer, ML, AI, Security, PM, New Grad, Intern, etc.)
+- **4 representative companies**, mapped 1:1 to Greenhouse, Lever, Ashby, and Workday
+- **Custom company tracking** — add companies by comma-separated name (`Airbnb, Spotify, Linear`) or by pasting a careers page URL
+- **ATS segments** — filter the company list by All, Greenhouse, Lever, Ashby, and Workday
+- **Role filtering** via focused SWE/SDE clickable role pills
 - **Experience & location filters** with dropdown toggles, plus free-text keyword matching (e.g. `React, Node, Security`)
 - **4 configurable alert windows** — hourly, every 6 hours, daily morning, daily evening
 - **Telegram delivery** with structured, per-role alerts (title, location, direct application link), connect/verify/send flow, and setup via deep link

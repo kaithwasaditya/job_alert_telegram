@@ -1,4 +1,3 @@
-import { detectCompany } from "../src/lib/ats";
 import { seedCompanies } from "../src/lib/constants";
 import { pool, query } from "../src/lib/db";
 
@@ -7,9 +6,7 @@ async function main() {
   await query(`DELETE FROM companies WHERE NOT (slug = ANY($1::text[]))`, [allowedSlugs]);
 
   for (const company of seedCompanies) {
-    const detected = await detectCompany(company.slug);
-    const tags = [...company.tags, detected.atsType === "unsupported" ? "" : "pollable"].filter(Boolean);
-    const isActive = detected.atsType !== "unsupported";
+    const tags = [...company.tags, "pollable"];
 
     await query(
       `INSERT INTO companies (name, slug, ats_type, ats_identifier, tags, is_active, last_poll_status)
@@ -20,10 +17,10 @@ async function main() {
          tags = EXCLUDED.tags,
          is_active = EXCLUDED.is_active,
          last_poll_status = 'pending'`,
-      [company.name, company.slug, detected.atsType, detected.atsIdentifier, tags, isActive]
+      [company.name, company.slug, company.source.atsType, company.source.atsIdentifier, tags, true]
     );
 
-    console.log(`${company.name}: ${detected.atsType} (${detected.jobs.length} jobs)`);
+    console.log(`${company.name}: ${company.source.atsType}`);
   }
 }
 

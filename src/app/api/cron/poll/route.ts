@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { AtsType } from "@/lib/ats";
 import { pollableAtsTypes } from "@/lib/ats";
+import { representativeAtsTags, representativeCompanySlugs } from "@/lib/constants";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { query } from "@/lib/db";
 import { pollCompany } from "@/lib/poller";
@@ -14,9 +15,10 @@ export async function POST(request: Request) {
     `SELECT id, slug, ats_type AS "atsType", ats_identifier AS "atsIdentifier", name
      FROM companies
      WHERE is_active = TRUE AND ats_type = ANY($1::text[])
+       AND (slug = ANY($2::text[]) OR tags && $3::text[])
      ORDER BY last_polled_at ASC NULLS FIRST
      LIMIT 20`,
-    [pollableAtsTypes]
+    [pollableAtsTypes, representativeCompanySlugs, representativeAtsTags]
   );
   const companies = res.rows as Array<{ id: string; slug: string; atsType: AtsType; atsIdentifier: string; name: string }>;
 

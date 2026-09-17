@@ -38,13 +38,13 @@ export function CompanyDirectory({ companies }: Props) {
       <div className="panel quickTrackPanel">
         <div>
           <h2>Track by name</h2>
-          <p className="muted">Comma-separate companies, like CRED, PhonePe, Adobe.</p>
+          <p className="muted">Comma-separate companies, like Airbnb, Spotify, Linear.</p>
         </div>
         <div className="quickTrackForm">
           <input
             value={companyNames}
             onChange={(event) => setCompanyNames(event.target.value)}
-            placeholder="CRED, Razorpay, Google"
+            placeholder="Airbnb, Spotify, Linear"
           />
           <button
             className="button buttonPrimary"

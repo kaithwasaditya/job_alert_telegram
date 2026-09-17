@@ -1,5 +1,6 @@
 import type { AtsType } from "../src/lib/ats";
 import { pollableAtsTypes } from "../src/lib/ats";
+import { representativeAtsTags, representativeCompanySlugs } from "../src/lib/constants";
 import { pool, query } from "../src/lib/db";
 import { pollCompany } from "../src/lib/poller";
 
@@ -11,7 +12,9 @@ async function main() {
     res = await query(
       `SELECT id, slug, ats_type AS "atsType", ats_identifier AS "atsIdentifier", name
        FROM companies
-       WHERE is_active = TRUE AND ats_type = ANY($1::text[]) AND slug = ANY($2::text[])
+       WHERE is_active = TRUE
+         AND ats_type = ANY($1::text[])
+         AND slug = ANY($2::text[])
        ORDER BY last_polled_at ASC NULLS FIRST, name ASC`,
       [pollableAtsTypes, requestedSlugs]
     );
@@ -20,8 +23,9 @@ async function main() {
       `SELECT id, slug, ats_type AS "atsType", ats_identifier AS "atsIdentifier", name
        FROM companies
        WHERE is_active = TRUE AND ats_type = ANY($1::text[])
+         AND (slug = ANY($2::text[]) OR tags && $3::text[])
        ORDER BY last_polled_at ASC NULLS FIRST, name ASC`,
-      [pollableAtsTypes]
+      [pollableAtsTypes, representativeCompanySlugs, representativeAtsTags]
     );
   }
 

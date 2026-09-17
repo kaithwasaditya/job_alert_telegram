@@ -118,6 +118,21 @@ export const pollableAtsTypes: AtsType[] = [
   "custom_scraped"
 ];
 
+export const atsDisplayNames: Record<AtsType, string> = {
+  greenhouse: "Greenhouse",
+  lever: "Lever",
+  workday: "Workday",
+  ashby: "Ashby",
+  smartrecruiters: "SmartRecruiters",
+  custom_scraped: "Structured careers page",
+  custom: "Custom",
+  unsupported: "Unsupported"
+};
+
+export function formatAtsName(atsType: AtsType) {
+  return atsDisplayNames[atsType] ?? atsType.replace(/_/g, " ");
+}
+
 // ── Fetchers ────────────────────────────────────────────────────────────────
 
 export async function fetchGreenhouseJobs(token: string): Promise<NormalizedJob[]> {
