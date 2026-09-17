@@ -1,5 +1,21 @@
-import type { AtsType } from "@prisma/client";
-import type { ExperienceLevel } from "@prisma/client";
+export type AtsType =
+  | "greenhouse"
+  | "lever"
+  | "workday"
+  | "ashby"
+  | "smartrecruiters"
+  | "custom_scraped"
+  | "custom"
+  | "unsupported";
+
+export type ExperienceLevel =
+  | "any"
+  | "internship"
+  | "entry"
+  | "mid"
+  | "senior"
+  | "staff"
+  | "manager";
 
 export type NormalizedJob = {
   externalId: string;
@@ -69,36 +85,6 @@ type SmartRecruitersPosting = {
 // ── Known company career page mappings ──────────────────────────────────────
 
 const knownCompanySources: Record<string, { atsType: AtsType; atsIdentifier: string }> = {
-  // Workday companies
-  adobe: {
-    atsType: "workday",
-    atsIdentifier: "https://adobe.wd5.myworkdayjobs.com/en-US/external_experienced"
-  },
-  paypal: {
-    atsType: "workday",
-    atsIdentifier: "https://paypal.wd1.myworkdayjobs.com/en-US/jobs"
-  },
-  salesforce: {
-    atsType: "workday",
-    atsIdentifier: "https://salesforce.wd12.myworkdayjobs.com/en-US/External_Career_Site"
-  },
-  servicenow: {
-    atsType: "workday",
-    atsIdentifier: "https://servicenow.wd1.myworkdayjobs.com/en-US/careers"
-  },
-  nvidia: {
-    atsType: "workday",
-    atsIdentifier: "https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite"
-  },
-  intuit: {
-    atsType: "workday",
-    atsIdentifier: "https://intuit.wd1.myworkdayjobs.com/en-US/Intuit"
-  },
-  walmart: {
-    atsType: "workday",
-    atsIdentifier: "https://walmart.wd5.myworkdayjobs.com/en-US/WalmartExternal"
-  },
-  // Custom scraped — careers pages with structured data / parseable HTML
   google: {
     atsType: "custom_scraped",
     atsIdentifier: "https://www.google.com/about/careers/applications/jobs/results"
@@ -107,110 +93,18 @@ const knownCompanySources: Record<string, { atsType: AtsType; atsIdentifier: str
     atsType: "custom_scraped",
     atsIdentifier: "https://careers.microsoft.com/us/en/search-results"
   },
-  apple: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://jobs.apple.com/en-us/search"
-  },
-  amazon: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://www.amazon.jobs/en/search"
-  },
-  meta: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://www.metacareers.com/jobs"
-  },
-  netflix: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://jobs.netflix.com/search"
-  },
-  oracle: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://careers.oracle.com/jobs"
-  },
-  sap: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://jobs.sap.com/search"
-  },
-  flipkart: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://www.flipkartcareers.com/#!/joblist"
-  },
-  swiggy: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://careers.swiggy.com"
-  },
-  zomato: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://www.zomato.com/careers"
-  },
-  phonepe: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://www.phonepe.com/careers/job-listings/"
-  },
-  zoho: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://careers.zohocorp.com/jobs/Ede"
-  },
-  uber: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://www.uber.com/us/en/careers/list/"
-  },
-  jpmorgan: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://careers.jpmorgan.com/us/en/search-results"
-  },
-  goldmansachs: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://higher.gs.com/roles"
-  },
-  morganstanley: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://www.morganstanley.com/careers/career-opportunities-search"
-  },
-  tcs: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://ibegin.tcs.com/iBegin/jobs/search"
-  },
-  infosys: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://career.infosys.com/joblist"
-  },
-  wipro: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://careers.wipro.com/search-jobs"
-  },
-  hcltech: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://www.hcltech.com/careers/job-search"
-  },
-  techmahindra: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://careers.techmahindra.com/en-in/search/"
-  },
-  cognizant: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://careers.cognizant.com/global/en/search-results"
-  },
-  accenture: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://www.accenture.com/in-en/careers/jobsearch"
-  },
-  capgemini: {
-    atsType: "custom_scraped",
-    atsIdentifier: "https://www.capgemini.com/jobs/"
-  },
-  amd: {
-    atsType: "workday",
-    atsIdentifier: "https://amd.wd1.myworkdayjobs.com/en-US/AMD"
-  },
   atlassian: {
     atsType: "custom_scraped",
     atsIdentifier: "https://www.atlassian.com/company/careers/all-jobs"
   },
-  canva: {
+  snowflake: {
     atsType: "custom_scraped",
-    atsIdentifier: "https://www.canva.com/careers/jobs/"
+    atsIdentifier: "https://www.snowflake.com/en/company/careers/"
   },
+  rubrik: {
+    atsType: "custom_scraped",
+    atsIdentifier: "https://www.rubrik.com/company/careers"
+  }
 };
 
 // ── Pollable ATS types (used across the codebase) ───────────────────────────

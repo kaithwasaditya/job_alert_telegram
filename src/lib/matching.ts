@@ -1,8 +1,19 @@
-import type { JobPosting, UserAlertPreference } from "@prisma/client";
+export type MatchingPosting = {
+  title: string;
+  locationRaw?: string | null;
+  locationCountry?: string | null;
+  experienceLevel: string;
+};
+
+export type MatchingPreference = {
+  locationFilter: string;
+  keywordFilter: string[];
+  experienceLevel: string;
+};
 
 export function postingMatchesSubscription(
-  posting: Pick<JobPosting, "title" | "locationRaw" | "locationCountry" | "experienceLevel">,
-  preference: Pick<UserAlertPreference, "locationFilter" | "keywordFilter" | "experienceLevel">
+  posting: MatchingPosting,
+  preference: MatchingPreference
 ) {
   const locationText = `${posting.locationRaw ?? ""} ${posting.locationCountry ?? ""}`.toLowerCase();
   const titleText = posting.title.toLowerCase();

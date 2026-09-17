@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { query } from "@/lib/db";
 
 type TelegramUpdate = {
   message?: {
@@ -22,24 +22,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, message: "Missing user token" });
   }
 
-  await prisma.notificationChannel.upsert({
-    where: {
-      userId_channelType: {
-        userId,
-        channelType: "telegram"
-      }
-    },
-    update: {
-      channelIdentifier: String(chatId),
-      isVerified: true
-    },
-    create: {
-      userId,
-      channelType: "telegram",
-      channelIdentifier: String(chatId),
-      isVerified: true
-    }
-  });
+  await query(
+    `INSERT INTO notification_channels (user_id, channel_type, channel_identifier, is_verified)
+     VALUES ($1, 'telegram', $2, TRUE)
+     ON CONFLICT (user_id, channel_type) DO UPDATE SET
+       channel_identifier = EXCLUDED.channel_identifier,
+       is_verified = TRUE`,
+    [userId, String(chatId)]
+  );
 
   return NextResponse.json({ ok: true });
 }

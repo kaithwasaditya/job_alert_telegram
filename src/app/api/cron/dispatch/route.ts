@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isCronAuthorized } from "@/lib/cron-auth";
+import { query } from "@/lib/db";
 import { postingMatchesSubscription, shouldDispatchNow } from "@/lib/matching";
-import { prisma } from "@/lib/prisma";
 import { sendTelegramMessage } from "@/lib/telegram";
 
 export async function POST(request: Request) {
@@ -9,60 +9,54 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const subscriptions = await prisma.userCompanySubscription.findMany({
-    where: { isEnabled: true },
-    include: {
-      company: {
-        include: {
-          postings: {
-            where: { isActive: true },
-            orderBy: { firstSeenAt: "desc" },
-            take: 25
-          }
-        }
-      },
-      user: {
-        include: {
-          alertPreference: true,
-          notificationChannels: {
-            where: { channelType: "telegram", isVerified: true },
-            take: 1
-          }
-        }
-      }
-    }
-  });
+  const subRes = await query(
+    `SELECT 
+       ucs.id AS subscription_id, ucs.user_id, ucs.company_id, ucs.alert_frequency, ucs.last_notified_at,
+       c.name AS company_name,
+       nc.channel_identifier AS telegram_chat_id,
+       uap.location_filter, uap.keyword_filter, uap.experience_level, uap.alert_frequency AS user_alert_frequency
+     FROM user_company_subscriptions ucs
+     JOIN companies c ON ucs.company_id = c.id
+     LEFT JOIN notification_channels nc ON nc.user_id = ucs.user_id AND nc.channel_type = 'telegram' AND nc.is_verified = TRUE
+     LEFT JOIN user_alert_preferences uap ON uap.user_id = ucs.user_id
+     WHERE ucs.is_enabled = TRUE`
+  );
 
   const results = [];
 
-  for (const subscription of subscriptions) {
-    const preference =
-      subscription.user.alertPreference ?? {
-        locationFilter: "Any",
-        keywordFilter: [],
-        experienceLevel: "any" as const,
-        alertFrequency: subscription.alertFrequency
-      };
+  for (const sub of subRes.rows) {
+    const preference = {
+      locationFilter: sub.location_filter ?? "Any",
+      keywordFilter: sub.keyword_filter ?? [],
+      experienceLevel: sub.experience_level ?? "any",
+      alertFrequency: sub.user_alert_frequency ?? sub.alert_frequency ?? "every_6h"
+    };
 
-    if (!shouldDispatchNow(preference.alertFrequency, subscription.lastNotifiedAt)) continue;
+    if (!shouldDispatchNow(preference.alertFrequency, sub.last_notified_at)) continue;
 
-    const channel = subscription.user.notificationChannels[0];
-    if (!channel) {
-      results.push({ subscription: subscription.id, status: "skipped_no_telegram" });
+    if (!sub.telegram_chat_id) {
+      results.push({ subscription: sub.subscription_id, status: "skipped_no_telegram" });
       continue;
     }
 
+    const postingsRes = await query(
+      `SELECT id, title, location_raw AS "locationRaw", location_country AS "locationCountry",
+              experience_level AS "experienceLevel", url
+       FROM job_postings
+       WHERE company_id = $1 AND is_active = TRUE
+       ORDER BY first_seen_at DESC
+       LIMIT 25`,
+      [sub.company_id]
+    );
+
     const unsent = [];
-    for (const posting of subscription.company.postings) {
-      const alreadySent = await prisma.notificationLog.findFirst({
-        where: {
-          userId: subscription.userId,
-          jobPostingId: posting.id,
-          channelType: "telegram",
-          status: "sent"
-        }
-      });
-      if (!alreadySent && postingMatchesSubscription(posting, preference)) {
+    for (const posting of postingsRes.rows) {
+      const sentRes = await query(
+        `SELECT 1 FROM notifications_log
+         WHERE user_id = $1 AND job_posting_id = $2 AND channel_type = 'telegram' AND status = 'sent'`,
+        [sub.user_id, posting.id]
+      );
+      if (sentRes.rowCount === 0 && postingMatchesSubscription(posting, preference)) {
         unsent.push(posting);
       }
     }
@@ -72,43 +66,31 @@ export async function POST(request: Request) {
     }
 
     const text = [
-      `${subscription.company.name}: ${unsent.length} new matching role${unsent.length === 1 ? "" : "s"}`,
+      `${sub.company_name}: ${unsent.length} new matching role${unsent.length === 1 ? "" : "s"}`,
       "",
       ...unsent.slice(0, 10).map((posting) => `- ${posting.title}\n${posting.locationRaw ?? "Location not listed"}\n${posting.url}`)
     ].join("\n");
 
-    const sent = await sendTelegramMessage(channel.channelIdentifier, text);
+    const sent = await sendTelegramMessage(sub.telegram_chat_id, text);
 
     for (const posting of unsent) {
-      await prisma.notificationLog.upsert({
-        where: {
-          userId_jobPostingId_channelType: {
-            userId: subscription.userId,
-            jobPostingId: posting.id,
-            channelType: "telegram"
-          }
-        },
-        update: {
-          sentAt: new Date(),
-          status: sent.ok ? "sent" : "failed"
-        },
-        create: {
-          userId: subscription.userId,
-          jobPostingId: posting.id,
-          channelType: "telegram",
-          status: sent.ok ? "sent" : "failed"
-        }
-      });
+      await query(
+        `INSERT INTO notifications_log (user_id, job_posting_id, channel_type, sent_at, status)
+         VALUES ($1, $2, 'telegram', NOW(), $3)
+         ON CONFLICT (user_id, job_posting_id, channel_type) DO UPDATE SET
+           sent_at = NOW(), status = EXCLUDED.status`,
+        [sub.user_id, posting.id, sent.ok ? "sent" : "failed"]
+      );
     }
 
     if (sent.ok) {
-      await prisma.userCompanySubscription.update({
-        where: { id: subscription.id },
-        data: { lastNotifiedAt: new Date() }
-      });
+      await query(
+        `UPDATE user_company_subscriptions SET last_notified_at = NOW() WHERE id = $1`,
+        [sub.subscription_id]
+      );
     }
 
-    results.push({ subscription: subscription.id, status: sent.ok ? "sent" : "failed", count: unsent.length });
+    results.push({ subscription: sub.subscription_id, status: sent.ok ? "sent" : "failed", count: unsent.length });
   }
 
   return NextResponse.json({ results });

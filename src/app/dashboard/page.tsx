@@ -7,7 +7,7 @@ import { CompanyDirectory } from "@/app/dashboard/company-directory";
 import { TelegramConnectPanel } from "@/app/dashboard/telegram-connect-panel";
 import { requireSyncedUser } from "@/lib/clerk-user";
 import { softwareKeywordPresets } from "@/lib/constants";
-import { prisma } from "@/lib/prisma";
+import { query } from "@/lib/db";
 import { telegramDeepLink, telegramStartCommand } from "@/lib/telegram";
 
 export default async function DashboardPage() {
@@ -15,29 +15,61 @@ export default async function DashboardPage() {
   if (!userId) redirect("/");
 
   const user = await requireSyncedUser();
-  const [companies, channels, subscriptionCount, preference] = await Promise.all([
-    prisma.company.findMany({
-      orderBy: [{ isActive: "desc" }, { name: "asc" }],
-      include: {
-        _count: { select: { postings: { where: { isActive: true } } } },
-        subscriptions: { where: { userId: user.id }, take: 1 }
-      }
-    }),
-    prisma.notificationChannel.findMany({ where: { userId: user.id } }),
-    prisma.userCompanySubscription.count({ where: { userId: user.id, isEnabled: true } }),
-    prisma.userAlertPreference.upsert({
-      where: { userId: user.id },
-      update: {},
-      create: {
-        userId: user.id,
-        locationFilter: "Any",
-        keywordFilter: [...softwareKeywordPresets],
-        experienceLevel: "any",
-        alertFrequency: "every_6h"
-      }
-    })
+
+  const [companiesRes, channelsRes, subCountRes] = await Promise.all([
+    query(
+      `SELECT 
+         c.id, c.name, c.ats_type AS "atsType", c.tags, c.is_active AS "isActive", c.last_poll_status AS "lastPollStatus",
+         (SELECT COUNT(*)::int FROM job_postings jp WHERE jp.company_id = c.id AND jp.is_active = TRUE) AS "postingCount",
+         ucs.is_enabled AS "subscriptionIsEnabled"
+       FROM companies c
+       LEFT JOIN user_company_subscriptions ucs ON ucs.company_id = c.id AND ucs.user_id = $1
+       ORDER BY c.is_active DESC, c.name ASC`,
+      [user.id]
+    ),
+    query(
+      `SELECT channel_type AS "channelType", channel_identifier AS "channelIdentifier", is_verified AS "isVerified"
+       FROM notification_channels WHERE user_id = $1`,
+      [user.id]
+    ),
+    query(
+      `SELECT COUNT(*)::int AS count FROM user_company_subscriptions WHERE user_id = $1 AND is_enabled = TRUE`,
+      [user.id]
+    )
   ]);
 
+  let prefRes = await query(
+    `SELECT location_filter AS "locationFilter", keyword_filter AS "keywordFilter",
+            experience_level AS "experienceLevel", alert_frequency AS "alertFrequency"
+     FROM user_alert_preferences WHERE user_id = $1`,
+    [user.id]
+  );
+
+  let preference = prefRes.rows[0];
+  if (!preference) {
+    const insertRes = await query(
+      `INSERT INTO user_alert_preferences (user_id, location_filter, keyword_filter, experience_level, alert_frequency)
+       VALUES ($1, 'Any', $2, 'any', 'every_6h')
+       RETURNING location_filter AS "locationFilter", keyword_filter AS "keywordFilter",
+                 experience_level AS "experienceLevel", alert_frequency AS "alertFrequency"`,
+      [user.id, softwareKeywordPresets]
+    );
+    preference = insertRes.rows[0];
+  }
+
+  const companies = companiesRes.rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    atsType: row.atsType,
+    tags: row.tags ?? [],
+    isActive: row.isActive,
+    lastPollStatus: row.lastPollStatus,
+    _count: { postings: row.postingCount },
+    subscriptions: row.subscriptionIsEnabled !== null ? [{ isEnabled: row.subscriptionIsEnabled }] : []
+  }));
+
+  const channels = channelsRes.rows;
+  const subscriptionCount = subCountRes.rows[0]?.count ?? 0;
   const telegram = channels.find((channel) => channel.channelType === "telegram");
   const deepLink = telegramDeepLink(user.id);
 
@@ -76,8 +108,7 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-        <AlertPreferencesForm preference={preference} />
-   
+      <AlertPreferencesForm preference={preference} />
 
       <div className="layoutGrid">
         <CompanyDirectory companies={companies} />

@@ -1,83 +1,72 @@
-import type { Company } from "@prisma/client";
+import type { AtsType } from "@/lib/ats";
 import { fetchJobsByCompany } from "@/lib/ats";
-import { prisma } from "@/lib/prisma";
+import { query } from "@/lib/db";
 
-export async function pollCompany(company: Pick<Company, "id" | "slug" | "atsType" | "atsIdentifier">) {
+export type PollerCompanyInput = {
+  id: string;
+  slug: string;
+  atsType: AtsType;
+  atsIdentifier: string;
+};
+
+export async function pollCompany(company: PollerCompanyInput) {
   const jobs = await fetchJobsByCompany(company.atsType, company.atsIdentifier);
   const now = new Date();
   const seenIds = jobs.map((job) => job.externalId);
 
   if (jobs.length > 0) {
-    await prisma.jobPosting.createMany({
-      data: jobs.map((job) => ({
-        companyId: company.id,
-        externalId: job.externalId,
-        title: job.title,
-        locationRaw: job.locationRaw,
-        locationCountry: job.locationCountry,
-        department: job.department,
-        experienceLevel: job.experienceLevel,
-        url: job.url,
-        firstSeenAt: now,
-        lastSeenAt: now,
-        isActive: true
-      })),
-      skipDuplicates: true
-    });
-
-    const existing = await prisma.jobPosting.findMany({
-      where: {
-        companyId: company.id,
-        externalId: { in: seenIds }
-      },
-      select: { id: true, externalId: true }
-    });
-
-    const existingIds = new Set(existing.map((posting) => posting.externalId));
-    const changedJobs = jobs.filter((job) => existingIds.has(job.externalId));
-
-    for (let index = 0; index < changedJobs.length; index += 50) {
-      const chunk = changedJobs.slice(index, index + 50);
-      await prisma.$transaction(
-        chunk.map((job) =>
-          prisma.jobPosting.update({
-            where: {
-              companyId_externalId: {
-                companyId: company.id,
-                externalId: job.externalId
-              }
-            },
-            data: {
-              title: job.title,
-              locationRaw: job.locationRaw,
-              locationCountry: job.locationCountry,
-              department: job.department,
-              experienceLevel: job.experienceLevel,
-              url: job.url,
-              lastSeenAt: now,
-              isActive: true
-            }
-          })
-        )
+    for (const job of jobs) {
+      await query(
+        `INSERT INTO job_postings (
+          company_id, external_id, title, location_raw, location_country,
+          department, experience_level, url, first_seen_at, last_seen_at, is_active
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9, TRUE)
+        ON CONFLICT (company_id, external_id) DO UPDATE SET
+          title = EXCLUDED.title,
+          location_raw = EXCLUDED.location_raw,
+          location_country = EXCLUDED.location_country,
+          department = EXCLUDED.department,
+          experience_level = EXCLUDED.experience_level,
+          url = EXCLUDED.url,
+          last_seen_at = EXCLUDED.last_seen_at,
+          is_active = TRUE`,
+        [
+          company.id,
+          job.externalId,
+          job.title,
+          job.locationRaw,
+          job.locationCountry,
+          job.department,
+          job.experienceLevel,
+          job.url,
+          now
+        ]
       );
     }
   }
 
-  await prisma.jobPosting.updateMany({
-    where: {
-      companyId: company.id,
-      externalId: { notIn: seenIds }
-    },
-    data: { isActive: false }
-  });
+  if (seenIds.length > 0) {
+    await query(
+      `UPDATE job_postings 
+       SET is_active = FALSE 
+       WHERE company_id = $1 AND NOT (external_id = ANY($2::text[]))`,
+      [company.id, seenIds]
+    );
+  } else {
+    await query(
+      `UPDATE job_postings 
+       SET is_active = FALSE 
+       WHERE company_id = $1`,
+      [company.id]
+    );
+  }
 
-  await prisma.company.update({
-    where: { id: company.id },
-    data: {
-      lastPolledAt: now,
-      lastPollStatus: jobs.length === 0 ? "error" : "ok"
-    }
-  });
+  await query(
+    `UPDATE companies 
+     SET last_polled_at = $1, last_poll_status = $2 
+     WHERE id = $3`,
+    [now, jobs.length === 0 ? "error" : "ok", company.id]
+  );
 
   return jobs.length;
 }

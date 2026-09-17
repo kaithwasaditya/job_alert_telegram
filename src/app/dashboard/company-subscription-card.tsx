@@ -1,6 +1,6 @@
 "use client";
 
-import type { AtsType } from "@prisma/client";
+import type { AtsType } from "@/lib/ats";
 import { pollableAtsTypes } from "@/lib/ats";
 
 type Props = {

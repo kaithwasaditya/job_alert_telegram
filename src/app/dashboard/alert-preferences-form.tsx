@@ -1,6 +1,6 @@
 "use client";
 
-import type { AlertFrequency, ExperienceLevel } from "@prisma/client";
+import type { ExperienceLevel } from "@/lib/ats";
 import { Clock, Save } from "lucide-react";
 import { useState, useTransition } from "react";
 import {
@@ -10,6 +10,8 @@ import {
   softwareKeywordPresets
 } from "@/lib/constants";
 import { updateAlertPreferences } from "./actions";
+
+export type AlertFrequency = "hourly" | "every_6h" | "daily_morning" | "daily_evening";
 
 type Props = {
   preference: {

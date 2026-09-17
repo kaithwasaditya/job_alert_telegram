@@ -1,22 +1,24 @@
 import { NextResponse } from "next/server";
-import { isCronAuthorized } from "@/lib/cron-auth";
+import type { AtsType } from "@/lib/ats";
 import { pollableAtsTypes } from "@/lib/ats";
+import { isCronAuthorized } from "@/lib/cron-auth";
+import { query } from "@/lib/db";
 import { pollCompany } from "@/lib/poller";
-import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
   if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const companies = await prisma.company.findMany({
-    where: {
-      isActive: true,
-      atsType: { in: pollableAtsTypes }
-    },
-    orderBy: { lastPolledAt: "asc" },
-    take: 20
-  });
+  const res = await query(
+    `SELECT id, slug, ats_type AS "atsType", ats_identifier AS "atsIdentifier", name
+     FROM companies
+     WHERE is_active = TRUE AND ats_type = ANY($1::text[])
+     ORDER BY last_polled_at ASC NULLS FIRST
+     LIMIT 20`,
+    [pollableAtsTypes]
+  );
+  const companies = res.rows as Array<{ id: string; slug: string; atsType: AtsType; atsIdentifier: string; name: string }>;
 
   const results = [];
 
@@ -25,13 +27,10 @@ export async function POST(request: Request) {
       const jobCount = await pollCompany(company);
       results.push({ company: company.slug, status: "ok", jobs: jobCount });
     } catch (error) {
-      await prisma.company.update({
-        where: { id: company.id },
-        data: {
-          lastPolledAt: new Date(),
-          lastPollStatus: "error"
-        }
-      });
+      await query(
+        `UPDATE companies SET last_polled_at = NOW(), last_poll_status = 'error' WHERE id = $1`,
+        [company.id]
+      );
       results.push({
         company: company.slug,
         status: "error",

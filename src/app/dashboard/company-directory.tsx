@@ -1,6 +1,6 @@
 "use client";
 
-import type { AtsType } from "@prisma/client";
+import type { AtsType } from "@/lib/ats";
 import { Plus } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 import { companyTagOptions } from "@/lib/constants";

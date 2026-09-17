@@ -4,21 +4,20 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
     "seed": "tsx scripts/seed.ts",
     "poll": "tsx scripts/poll-now.ts",
     "detect": "tsx scripts/detect-companies.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.31.6",
-    "@prisma/client": "^6.13.0",
+    "@types/pg": "^8.23.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
     "next": "^16.2.12",
+    "pg": "^8.23.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "zod": "^3.25.76"
@@ -27,7 +26,6 @@
     "@types/node": "^22.13.14",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
-    "prisma": "^6.13.0",
     "tsx": "^4.19.2",
     "typescript": "^5.8.3"
   }
