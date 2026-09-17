@@ -81,3 +81,10 @@ CREATE TABLE IF NOT EXISTS notifications_log (
   status TEXT NOT NULL,
   CONSTRAINT notifications_log_user_id_job_posting_id_channel_type_key UNIQUE (user_id, job_posting_id, channel_type)
 );
+
+ALTER TABLE user_alert_preferences ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE companies ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE job_postings ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE user_company_subscriptions ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE notification_channels ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;
+ALTER TABLE notifications_log ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;

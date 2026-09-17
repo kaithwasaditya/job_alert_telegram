@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type { AtsType } from "@/lib/ats";
@@ -22,10 +23,10 @@ export async function upsertSubscription(input: z.infer<typeof subscriptionSchem
   const data = subscriptionSchema.parse(input);
 
   await query(
-    `INSERT INTO user_company_subscriptions (user_id, company_id, is_enabled)
-     VALUES ($1, $2, $3)
+    `INSERT INTO user_company_subscriptions (id, user_id, company_id, is_enabled)
+     VALUES ($1, $2, $3, $4)
      ON CONFLICT (user_id, company_id) DO UPDATE SET is_enabled = EXCLUDED.is_enabled`,
-    [user.id, data.companyId, data.isEnabled]
+    [randomUUID(), user.id, data.companyId, data.isEnabled]
   );
 
   revalidatePath("/dashboard");
@@ -51,15 +52,15 @@ export async function updateAlertPreferences(input: z.infer<typeof preferencesSc
   const keywordFilter = Array.from(new Set([...data.keywordFilter, ...customKeywords]));
 
   await query(
-    `INSERT INTO user_alert_preferences (user_id, location_filter, keyword_filter, experience_level, alert_frequency, updated_at)
-     VALUES ($1, $2, $3, $4, $5, NOW())
+    `INSERT INTO user_alert_preferences (id, user_id, location_filter, keyword_filter, experience_level, alert_frequency, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, NOW())
      ON CONFLICT (user_id) DO UPDATE SET
        location_filter = EXCLUDED.location_filter,
        keyword_filter = EXCLUDED.keyword_filter,
        experience_level = EXCLUDED.experience_level,
        alert_frequency = EXCLUDED.alert_frequency,
        updated_at = NOW()`,
-    [user.id, data.locationFilter, keywordFilter, data.experienceLevel, data.alertFrequency]
+    [randomUUID(), user.id, data.locationFilter, keywordFilter, data.experienceLevel, data.alertFrequency]
   );
 
   await query(
@@ -95,12 +96,12 @@ export async function trackAllPollableCompanies() {
          SELECT id
          FROM companies
          WHERE is_active = TRUE
-           AND ats_type = ANY($2::text[])
+           AND ats_type::text = ANY($2::text[])
            AND (slug = ANY($3::text[]) OR tags && $4::text[])
        ),
        upserted AS (
-         INSERT INTO user_company_subscriptions (user_id, company_id, is_enabled)
-         SELECT $1, id, TRUE
+         INSERT INTO user_company_subscriptions (id, user_id, company_id, is_enabled)
+         SELECT gen_random_uuid()::text, $1, id, TRUE
          FROM pollable_companies
          ON CONFLICT (user_id, company_id) DO UPDATE SET is_enabled = TRUE
          RETURNING company_id
@@ -149,10 +150,10 @@ export async function trackCompaniesByName(input: string) {
 
   for (const company of pollable) {
     await query(
-      `INSERT INTO user_company_subscriptions (user_id, company_id, is_enabled)
-       VALUES ($1, $2, TRUE)
+      `INSERT INTO user_company_subscriptions (id, user_id, company_id, is_enabled)
+       VALUES ($1, $2, $3, TRUE)
        ON CONFLICT (user_id, company_id) DO UPDATE SET is_enabled = TRUE`,
-      [user.id, company.id]
+      [randomUUID(), user.id, company.id]
     );
   }
 
@@ -176,7 +177,7 @@ export async function pollNow() {
     const res = await query(
       `SELECT id, slug, ats_type AS "atsType", ats_identifier AS "atsIdentifier", name
        FROM companies
-       WHERE is_active = TRUE AND ats_type = ANY($1::text[])
+       WHERE is_active = TRUE AND ats_type::text = ANY($1::text[])
          AND (slug = ANY($2::text[]) OR tags && $3::text[])
        ORDER BY last_polled_at ASC NULLS FIRST, name ASC
        LIMIT 8`,
@@ -226,12 +227,12 @@ export async function checkTelegramConnection() {
   }
 
   await query(
-    `INSERT INTO notification_channels (user_id, channel_type, channel_identifier, is_verified)
-     VALUES ($1, 'telegram', $2, TRUE)
+    `INSERT INTO notification_channels (id, user_id, channel_type, channel_identifier, is_verified)
+     VALUES ($1, $2, 'telegram', $3, TRUE)
      ON CONFLICT (user_id, channel_type) DO UPDATE SET
        channel_identifier = EXCLUDED.channel_identifier,
        is_verified = TRUE`,
-    [user.id, result.chatId]
+    [randomUUID(), user.id, result.chatId]
   );
 
   await sendTelegramMessage(result.chatId, "Alert Bot is connected. You will receive matching job alerts here.");
@@ -264,11 +265,11 @@ export async function sendManualAlertsNow() {
   let preference = prefRes.rows[0];
   if (!preference) {
     const createdPref = await query(
-      `INSERT INTO user_alert_preferences (user_id, location_filter, keyword_filter, experience_level, alert_frequency)
-       VALUES ($1, 'Any', $2, 'any', 'every_6h')
+      `INSERT INTO user_alert_preferences (id, user_id, location_filter, keyword_filter, experience_level, alert_frequency)
+       VALUES ($1, $2, 'Any', $3, 'any', 'every_6h')
        RETURNING location_filter AS "locationFilter", keyword_filter AS "keywordFilter",
                  experience_level AS "experienceLevel", alert_frequency AS "alertFrequency"`,
-      [user.id, softwareKeywordPresets]
+      [randomUUID(), user.id, softwareKeywordPresets]
     );
     preference = createdPref.rows[0];
   }
@@ -341,11 +342,11 @@ export async function sendManualAlertsNow() {
   for (const { postings } of matchingByCompany) {
     for (const posting of postings) {
       await query(
-        `INSERT INTO notifications_log (user_id, job_posting_id, channel_type, sent_at, status)
-         VALUES ($1, $2, 'telegram', NOW(), $3)
+        `INSERT INTO notifications_log (id, user_id, job_posting_id, channel_type, sent_at, status)
+         VALUES ($1, $2, $3, 'telegram', NOW(), $4)
          ON CONFLICT (user_id, job_posting_id, channel_type) DO UPDATE SET
            sent_at = NOW(), status = EXCLUDED.status`,
-        [user.id, posting.id, sent.ok ? "sent" : "failed"]
+        [randomUUID(), user.id, posting.id, sent.ok ? "sent" : "failed"]
       );
     }
   }
@@ -378,8 +379,8 @@ export async function addCompanyFromUrl(formData: FormData) {
   const slug = slugify(name);
 
   const companyRes = await query(
-    `INSERT INTO companies (name, slug, ats_type, ats_identifier, tags, is_active, last_poll_status)
-     VALUES ($1, $2, $3, $4, $5, TRUE, 'pending')
+    `INSERT INTO companies (id, name, slug, ats_type, ats_identifier, tags, is_active, last_poll_status)
+     VALUES ($1, $2, $3, $4, $5, $6, TRUE, 'pending')
      ON CONFLICT (slug) DO UPDATE SET
        ats_type = EXCLUDED.ats_type,
        ats_identifier = EXCLUDED.ats_identifier,
@@ -388,6 +389,7 @@ export async function addCompanyFromUrl(formData: FormData) {
        last_poll_status = 'pending'
      RETURNING id, name`,
     [
+      randomUUID(),
       name.charAt(0).toUpperCase() + name.slice(1),
       slug,
       detection.atsType,
@@ -398,10 +400,10 @@ export async function addCompanyFromUrl(formData: FormData) {
   const company = companyRes.rows[0];
 
   await query(
-    `INSERT INTO user_company_subscriptions (user_id, company_id, is_enabled)
-     VALUES ($1, $2, TRUE)
+    `INSERT INTO user_company_subscriptions (id, user_id, company_id, is_enabled)
+     VALUES ($1, $2, $3, TRUE)
      ON CONFLICT (user_id, company_id) DO UPDATE SET is_enabled = TRUE`,
-    [user.id, company.id]
+    [randomUUID(), user.id, company.id]
   );
 
   revalidatePath("/dashboard");

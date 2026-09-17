@@ -1,16 +1,16 @@
-import { ClerkProvider, SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
 import { BellRing } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HeaderAuthNav } from "@/app/header-auth-nav";
 import "./globals.css";
-import Image from "next/image";
-import logoImg from "@/app/icon.png"; // adjust path if your navbar is elsewhere
-
-<Image src={logoImg} alt="Alert Bot" width={28} height={28} className="logo-icon" />
 
 export const metadata: Metadata = {
   title: "Alert Bot",
-  description: "Track first-party career pages and receive matched job alerts on Telegram."
+  description: "Track first-party career pages and receive matched job alerts on Telegram.",
+  icons: {
+    icon: "/icon.png"
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -26,15 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="serifAccent">Alert Bot</span>
             </Link>
             <nav className="nav">
-              <Link href="/dashboard">Dashboard</Link>
-              <SignedOut>
-                <Link className="button buttonPrimary" href="/sign-in">
-                  Sign in
-                </Link>
-              </SignedOut>
-              <SignedIn>
-                <UserButton afterSignOutUrl="/" />
-              </SignedIn>
+              <HeaderAuthNav />
             </nav>
           </header>
           {children}

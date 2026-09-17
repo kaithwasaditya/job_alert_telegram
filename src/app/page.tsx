@@ -1,6 +1,5 @@
-import { SignedIn, SignedOut } from "@clerk/nextjs";
 import { ArrowRight, Building2, Send, SlidersHorizontal } from "lucide-react";
-import Link from "next/link";
+import { HomeCta } from "@/app/home-cta";
 
 export default function HomePage() {
   return (
@@ -16,16 +15,7 @@ export default function HomePage() {
           company once, then fans out relevant alerts to subscribers.
         </p>
         <div className="dashboardActions">
-          <SignedOut>
-            <Link className="button buttonPrimary" href="/sign-in">
-              Start tracking <ArrowRight size={18} />
-            </Link>
-          </SignedOut>
-          <SignedIn>
-            <Link className="button buttonPrimary" href="/dashboard">
-              Open dashboard <ArrowRight size={18} />
-            </Link>
-          </SignedIn>
+          <HomeCta />
         </div>
       </section>
      <div className="heroStats">

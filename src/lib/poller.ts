@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { AtsType } from "@/lib/ats";
 import { fetchJobsByCompany } from "@/lib/ats";
 import { query } from "@/lib/db";
@@ -18,9 +19,9 @@ export async function pollCompany(company: PollerCompanyInput) {
     for (const job of jobs) {
       await query(
         `INSERT INTO job_postings (
-          company_id, external_id, title, location_raw, location_country,
+          id, company_id, external_id, title, location_raw, location_country,
           department, experience_level, url, first_seen_at, last_seen_at, is_active
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9, TRUE)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10, TRUE)
         ON CONFLICT (company_id, external_id) DO UPDATE SET
           title = EXCLUDED.title,
           location_raw = EXCLUDED.location_raw,
@@ -31,6 +32,7 @@ export async function pollCompany(company: PollerCompanyInput) {
           last_seen_at = EXCLUDED.last_seen_at,
           is_active = TRUE`,
         [
+          randomUUID(),
           company.id,
           job.externalId,
           job.title,

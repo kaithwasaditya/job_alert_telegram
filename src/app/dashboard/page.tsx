@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { AddCompanyForm } from "@/app/dashboard/add-company-form";
@@ -50,11 +51,11 @@ export default async function DashboardPage() {
   let preference = prefRes.rows[0];
   if (!preference) {
     const insertRes = await query(
-      `INSERT INTO user_alert_preferences (user_id, location_filter, keyword_filter, experience_level, alert_frequency)
-       VALUES ($1, 'Any', $2, 'any', 'every_6h')
+      `INSERT INTO user_alert_preferences (id, user_id, location_filter, keyword_filter, experience_level, alert_frequency)
+       VALUES ($1, $2, 'Any', $3, 'any', 'every_6h')
        RETURNING location_filter AS "locationFilter", keyword_filter AS "keywordFilter",
                  experience_level AS "experienceLevel", alert_frequency AS "alertFrequency"`,
-      [user.id, softwareKeywordPresets]
+      [randomUUID(), user.id, softwareKeywordPresets]
     );
     preference = insertRes.rows[0];
   }

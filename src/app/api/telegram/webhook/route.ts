@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
@@ -23,12 +24,12 @@ export async function POST(request: Request) {
   }
 
   await query(
-    `INSERT INTO notification_channels (user_id, channel_type, channel_identifier, is_verified)
-     VALUES ($1, 'telegram', $2, TRUE)
+    `INSERT INTO notification_channels (id, user_id, channel_type, channel_identifier, is_verified)
+     VALUES ($1, $2, 'telegram', $3, TRUE)
      ON CONFLICT (user_id, channel_type) DO UPDATE SET
        channel_identifier = EXCLUDED.channel_identifier,
        is_verified = TRUE`,
-    [userId, String(chatId)]
+    [randomUUID(), userId, String(chatId)]
   );
 
   return NextResponse.json({ ok: true });

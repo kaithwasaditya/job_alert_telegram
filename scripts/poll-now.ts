@@ -13,7 +13,7 @@ async function main() {
       `SELECT id, slug, ats_type AS "atsType", ats_identifier AS "atsIdentifier", name
        FROM companies
        WHERE is_active = TRUE
-         AND ats_type = ANY($1::text[])
+         AND ats_type::text = ANY($1::text[])
          AND slug = ANY($2::text[])
        ORDER BY last_polled_at ASC NULLS FIRST, name ASC`,
       [pollableAtsTypes, requestedSlugs]
@@ -22,7 +22,7 @@ async function main() {
     res = await query(
       `SELECT id, slug, ats_type AS "atsType", ats_identifier AS "atsIdentifier", name
        FROM companies
-       WHERE is_active = TRUE AND ats_type = ANY($1::text[])
+       WHERE is_active = TRUE AND ats_type::text = ANY($1::text[])
          AND (slug = ANY($2::text[]) OR tags && $3::text[])
        ORDER BY last_polled_at ASC NULLS FIRST, name ASC`,
       [pollableAtsTypes, representativeCompanySlugs, representativeAtsTags]

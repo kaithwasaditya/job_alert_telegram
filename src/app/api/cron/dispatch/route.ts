@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { query } from "@/lib/db";
@@ -75,11 +76,11 @@ export async function POST(request: Request) {
 
     for (const posting of unsent) {
       await query(
-        `INSERT INTO notifications_log (user_id, job_posting_id, channel_type, sent_at, status)
-         VALUES ($1, $2, 'telegram', NOW(), $3)
+        `INSERT INTO notifications_log (id, user_id, job_posting_id, channel_type, sent_at, status)
+         VALUES ($1, $2, $3, 'telegram', NOW(), $4)
          ON CONFLICT (user_id, job_posting_id, channel_type) DO UPDATE SET
            sent_at = NOW(), status = EXCLUDED.status`,
-        [sub.user_id, posting.id, sent.ok ? "sent" : "failed"]
+        [randomUUID(), sub.user_id, posting.id, sent.ok ? "sent" : "failed"]
       );
     }
 
